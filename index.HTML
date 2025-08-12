@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Amigo Secreto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        h1 {
+            color: #5a2d82;
+        }
+        .controls {
+            margin-bottom: 10px;
+        }
+        input {
+            padding: 10px;
+            width: 220px;
+            border: 2px solid #5a2d82;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 12px;
+            margin: 5px;
+            border: none;
+            background-color: #5a2d82;
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #7a46a8; }
+        .danger { background-color: #e74c3c; }
+        .danger:hover { background-color: #c0392b; }
+        .muted { background-color: #777; }
+        .muted:hover { background-color: #5e5e5e; }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: white;
+            margin: 6px auto;
+            padding: 10px;
+            width: 320px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .delete-btn {
+            padding: 6px 8px;
+            font-size: 0.9em;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        #resultado {
+            font-size: 1.2em;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #008000;
+        }
+        #historial {
+            margin-top: 20px;
+            font-size: 1em;
+            color: #5a2d82;
+        }
+        @media (max-width: 420px) {
+            li, input { width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎁 Juego del Amigo Secreto 🎁</h1>
+
+    <div class="controls">
+        <input type="text" id="nombre" placeholder="Ingresa un nombre" />
+        <button onclick="adicionarAmigo()">Adicionar</button>
+        <button onclick="sortearAmigo()">Sortear Amigo</button>
+        <button class="muted" onclick="nuevaLista()">Nueva lista</button>
+    </div>
+
+    <ul id="listaAmigos"></ul>
+
+    <p id="resultado"></p>
+
+    <div id="historial">
+        <h3>Historial de Ganadores:</h3>
+        <ul id="listaHistorial"></ul>
+    </div>
+
+    <script>
+        let amigos = [];
+        let historial = [];
+
+        function adicionarAmigo() {
+            const input = document.getElementById("nombre");
+            let nombre = input.value.trim();
+            if (nombre === "") {
+                alert("Por favor, ingresa un nombre válido.");
+                return;
+            }
+
+            // Evitar duplicados (case-insensitive)
+            const lower = nombre.toLowerCase();
+            if (amigos.some(a => a.toLowerCase() === lower)) {
+                alert("Ese nombre ya está en la lista.");
+                input.value = "";
+                input.focus();
+                return;
+            }
+
+            amigos.push(nombre);
+            mostrarLista();
+            input.value = "";
+            input.focus();
+        }
+
+        function mostrarLista() {
+            const lista = document.getElementById("listaAmigos");
+            lista.innerHTML = "";
+
+            amigos.forEach((amigo, index) => {
+                const li = document.createElement("li");
+
+                const span = document.createElement("span");
+                span.textContent = amigo;
+                span.style.flex = "1";
+                span.style.textAlign = "left";
+
+                const delBtn = document.createElement("button");
+                delBtn.textContent = "Eliminar";
+                delBtn.className = "delete-btn danger";
+                delBtn.title = `Eliminar ${amigo}`;
+                delBtn.onclick = () => eliminarAmigo(index);
+
+                li.appendChild(span);
+                li.appendChild(delBtn);
+                lista.appendChild(li);
+            });
+        }
+
+        function eliminarAmigo(index) {
+            const nombre = amigos[index];
+            const confirmar = confirm(`¿Eliminar a "${nombre}" de la lista?`);
+            if (!confirmar) return;
+
+            // Quitar de la lista de amigos
+            amigos.splice(index, 1);
+
+            // Si estaba en historial, quitarlo también
+            historial = historial.filter(h => h !== nombre);
+
+            // Si el resultado mostrado es ese nombre, limpiarlo
+            const resultadoEl = document.getElementById("resultado");
+            if (resultadoEl.textContent.includes(nombre)) {
+                resultadoEl.textContent = "";
+            }
+
+            mostrarLista();
+            mostrarHistorial();
+        }
+
+        function sortearAmigo() {
+            if (amigos.length === 0) {
+                alert("No hay amigos para sortear.");
+                return;
+            }
+
+            // candidatos que no han salido todavía
+            let candidatos = amigos.filter(a => !historial.includes(a));
+
+            if (candidatos.length === 0) {
+                alert("Todos ya han salido. ¡Se reinicia el historial para volver a sortear!");
+                historial = [];
+                candidatos = [...amigos];
+            }
+
+            const indiceAleatorio = Math.floor(Math.random() * candidatos.length);
+            const amigoSorteado = candidatos[indiceAleatorio];
+
+            historial.push(amigoSorteado);
+            mostrarHistorial();
+
+            document.getElementById("resultado").textContent =
+                "🎉 El amigo secreto es: " + amigoSorteado + " 🎉";
+        }
+
+        function mostrarHistorial() {
+            const listaHistorial = document.getElementById("listaHistorial");
+            listaHistorial.innerHTML = "";
+
+            historial.forEach(function(nombre) {
+                const li = document.createElement("li");
+                li.textContent = nombre;
+                listaHistorial.appendChild(li);
+            });
+        }
+
+        function nuevaLista() {
+            const confirmar = confirm("¿Seguro que quieres borrar toda la lista y comenzar de nuevo?");
+            if (!confirmar) return;
+
+            amigos = [];
+            historial = [];
+            document.getElementById("resultado").textContent = "";
+            document.getElementById("nombre").value = "";
+            mostrarLista();
+            mostrarHistorial();
+            document.getElementById("nombre").focus();
+        }
+
+        // Permitir presionar Enter para adicionar
+        document.getElementById("nombre").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                adicionarAmigo();
+            }
+        });
+    </script>
+</body>
+</html>
